@@ -1,33 +1,59 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+
+import { useContext, useEffect, useState } from 'react'
 import './App.css'
+import { AuthContext } from 'react-oauth2-code-pkce'
 
 function App() {
-  const [count, setCount] = useState(0)
+
+  const {token, tokenData, logIn, logOut, isAuthenticated} = useContext(AuthContext);
+  const [message,setMessage] = useState('');
+
+  useEffect(() => {
+    if(token) {
+      console.log("Token available "+ token)
+      fetchFromApi(token);
+    }
+  }, [token]);
+
+  //u can use axios here
+  const fetchFromApi = async (token) => {
+    try {
+      const response = await fetch("http://localhost:8081/api/home", {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'text/plain; charset=utf-8'
+        }
+      });
+      if(response.ok){
+        const text = await response.text();
+        setMessage(text);
+      }
+    } catch (error) {
+      console.warn("API ERROR: ", error)
+      setMessage("api error");
+    }
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div style={{padding: '2rem'}}>
+        <h1>OAuth2 PKCE Demo</h1>
+        <p>Message from api : </p>
+        <p>{message}</p>
+        <div>
+          {
+            !token ? (
+              <button onClick={() => logIn()}>
+                Login
+              </button>
+            ) : (
+              <button onClick={() => logOut()}>
+                Log out
+              </button>
+            )
+          }
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
